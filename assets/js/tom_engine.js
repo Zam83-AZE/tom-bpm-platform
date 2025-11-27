@@ -1,5 +1,6 @@
 /**
- * FAYL: tom_engine.js (v3.6 - Final Stable with all fixes)
+ * FAYL: tom_engine.js (v3.7 - Final Stable + Dynamic Combobox)
+ * Features: Async API, Zombie Protection, Deep Variable Parsing, SubProcess, Dynamic Options
  */
 class ModularEngine {
     constructor(registry, startName) {
@@ -83,19 +84,45 @@ class ModularEngine {
                 div.innerHTML = `<label style='display:block; margin-top:10px; font-weight:bold; color:#555'>${inp.label}</label>`;
                 
                 let input;
+                
+                // --- SELECT (COMBOBOX) LOGIC ---
                 if (inp.type === 'select') {
                     input = document.createElement('select');
                     let opts = inp.options;
-                    if (typeof opts === 'string') {
-                        opts = opts.replace(/"/g, '').split(',').map(s => s.trim());
-                    } else if (!Array.isArray(opts)) opts = [];
 
+                    // 1. Dinamik Dəyişən Yoxlanışı (${list})
+                    if (typeof opts === 'string' && opts.startsWith('${') && opts.endsWith('}')) {
+                        // Dəyişənin adını çıxarırıq (məs: ${cities} -> cities)
+                        const varName = opts.substring(2, opts.length - 1);
+                        
+                        // Datadan həmin siyahını axtarırıq
+                        if (Array.isArray(this.data[varName])) {
+                            opts = this.data[varName]; // Əgər Array-dirsə götür
+                        } else if (typeof this.data[varName] === 'string') {
+                            // Stringdirsə (vergüllə ayrılmış) split edirik
+                            opts = this.data[varName].split(',').map(s => s.trim());
+                        } else {
+                            opts = []; // Tapılmasa boş olsun
+                        }
+                    }
+                    // 2. Statik String emalı (Vergüllə ayrılmış: "A, B, C")
+                    else if (typeof opts === 'string') {
+                        opts = opts.replace(/"/g, '').split(',').map(s => s.trim());
+                    } 
+                    // 3. Sığorta
+                    else if (!Array.isArray(opts)) {
+                        opts = [];
+                    }
+
+                    // Seçimləri əlavə edirik
                     opts.forEach(o => {
                         const opt = document.createElement("option");
                         opt.text = opt.value = o;
                         input.add(opt);
                     });
-                } else {
+                } 
+                // --- TEXT / NUMBER INPUT LOGIC ---
+                else {
                     input = document.createElement('input');
                     input.type = inp.type;
                 }
@@ -108,6 +135,7 @@ class ModularEngine {
                 input.id = inp.name; 
                 input.value = this.data[inp.name] || "";
                 
+                // Readonly Checkbox Logic or ServiceTask
                 if (inp.readonly === true || act.type === "ServiceTask") {
                     input.disabled = true;
                     input.style.backgroundColor = "#f0f0f0";
@@ -127,6 +155,7 @@ class ModularEngine {
         } else if (act.type === "EndEvent") {
             if(btn) btn.style.display = "none";
             
+            // SubProcess Return Logic
             if (this.stack.length > 0) {
                 container.innerHTML = `
                     <div class="alert" style="background:#e0f2fe; border-color:#0ea5e9; color:#0369a1; text-align:center">
@@ -139,11 +168,10 @@ class ModularEngine {
 
             const isSuccess = !act.id.toLowerCase().includes("reject");
             
-            // --- PARSER DÜZƏLİŞİ ---
+            // --- PARSER (Dəyişənləri oxumaq üçün) ---
             const formatText = (text) => {
                 if (!text) return '';
-                // ${deyisen} formatını tutur
-                return text.replace(/\$\{([\w\.]+)\}/g, (_, path) => {
+                return text.replace(/\$\$\{?([\w\.]+)\}?/g, (_, path) => {
                     const keys = path.split('.');
                     let value = this.data;
                     for (const key of keys) {
@@ -185,8 +213,9 @@ class ModularEngine {
                 final_data: this.data 
             });
         }
-    } // <--- BU BAĞLANAN MÖTƏRİZƏ UNUDULMUŞDU!
+    }
 
+    // --- ASYNC SERVICE EXECUTION ---
     async executeService(act) {
         const activityKey = `${this.currentProcessName}:${act.id}`;
         
@@ -204,8 +233,10 @@ class ModularEngine {
         };
         const simFunc = getSimFunction(act.simulation);
 
+        // Vizual gecikmə
         await new Promise(r => setTimeout(r, 500));
 
+        // Zombie Protection
         if (this.currentId !== act.id) {
             console.warn("⚠️ Servis ləğv edildi: İstifadəçi başqa addımdadır.");
             return;
@@ -216,10 +247,13 @@ class ModularEngine {
             
             if (simFunc) {
                 let tempRes = simFunc(this.data);
+                
+                // Promise (Fetch) dəstəyi
                 if (tempRes instanceof Promise) {
                     tempRes = await tempRes;
                 }
                 
+                // Zombie Check 2
                 if (this.currentId !== act.id) return;
 
                 if (typeof tempRes === 'function') {
@@ -270,6 +304,7 @@ class ModularEngine {
         const childData = this.data;
         const parentState = this.stack.pop();
         
+        // Merge Data
         this.data = { ...parentState.dataSnapshot, ...childData };
 
         this.currentProcessName = parentState.processName;
