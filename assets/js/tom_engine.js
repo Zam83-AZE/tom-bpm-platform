@@ -1,6 +1,5 @@
 /**
- * FAYL: tom_engine.js (v3.2 - Final Full Features)
- * Features: Async API, Zombie Protection, Deep Variable Parsing, SubProcess
+ * FAYL: tom_engine.js (v3.3 - Syntax Fix)
  */
 class ModularEngine {
     constructor(registry, startName) {
@@ -122,7 +121,6 @@ class ModularEngine {
 
         // Process Logic
         if (act.type === "ServiceTask") {
-            // Async çağırış (Promise gözləmirik ki, UI bloklanmasın)
             this.executeService(act); 
         } else if (act.type === "SubProcess") {
             setTimeout(() => this.enterSubProcess(act), 1000);
@@ -143,7 +141,7 @@ class ModularEngine {
 
             const isSuccess = !act.id.toLowerCase().includes("reject");
             
-            // --- PARSER: ${login.message} kimi dəyişənləri tapır ---
+            // --- PARSER ---
             const formatText = (text) => {
                 if (!text) return '';
                 return text.replace(/\$\$\{?([\w\.]+)\}?/g, (_, path) => {
@@ -188,7 +186,7 @@ class ModularEngine {
                 final_data: this.data 
             });
         }
-    }
+    } // <--- BU MÖTƏRİZƏ SİZDƏ YOX İDİ
 
     // --- ASYNC EXECUTE SERVICE ---
     async executeService(act) {
