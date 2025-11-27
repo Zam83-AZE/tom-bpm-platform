@@ -1,5 +1,5 @@
 /**
- * FAYL: tom_engine.js (v3.4 - Fix: Variable Parsing Regex)
+ * FAYL: tom_engine.js (v3.6 - Final Stable with all fixes)
  */
 class ModularEngine {
     constructor(registry, startName) {
@@ -150,7 +150,7 @@ class ModularEngine {
                         if (value && value[key] !== undefined) {
                             value = value[key];
                         } else {
-                            return ''; // Tapılmasa boş qaytar
+                            return '';
                         }
                     }
                     return value;
@@ -185,7 +185,7 @@ class ModularEngine {
                 final_data: this.data 
             });
         }
-    }
+    } // <--- BU BAĞLANAN MÖTƏRİZƏ UNUDULMUŞDU!
 
     async executeService(act) {
         const activityKey = `${this.currentProcessName}:${act.id}`;
