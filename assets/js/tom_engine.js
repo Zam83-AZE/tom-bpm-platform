@@ -1,5 +1,6 @@
 /**
- * FAYL: tom_engine.js (v3.1 - Fix: SubProcess Data Merge)
+ * FAYL: tom_engine.js (v3.2 - Final Full Features)
+ * Features: Async API, Zombie Protection, Deep Variable Parsing, SubProcess
  */
 class ModularEngine {
     constructor(registry, startName) {
@@ -46,6 +47,7 @@ class ModularEngine {
         if(title) title.innerText = `${act.name} (${act.role || 'System'})`;
         if(container) container.innerHTML = "";
         
+        // Button Logic
         if(btn) {
             if (act.type === "UserTask") {
                 btn.style.display = "block";
@@ -58,10 +60,12 @@ class ModularEngine {
             }
         }
 
+        // Log message
         if (act.type !== "EndEvent") {
             this.log(this.currentProcessName, `Addım Yükləndi: ${act.name} (${act.type})`);
         }
 
+        // Validation Messages
         if (this.data.status === 'ERROR' && this.data.message) {
             const errorDiv = document.createElement("div");
             errorDiv.className = "alert";
@@ -73,6 +77,7 @@ class ModularEngine {
             this.data.message = "";
         }
 
+        // Inputs Rendering
         if (act.inputs && container) {
             act.inputs.forEach(inp => {
                 const div = document.createElement("div");
@@ -101,27 +106,31 @@ class ModularEngine {
                 input.style.marginTop = "5px";
                 input.style.border = "1px solid #ccc";
                 input.style.borderRadius = "4px";
-                input.id = inp.name;
+                input.id = inp.name; 
                 input.value = this.data[inp.name] || "";
                 
-                if (act.type === "ServiceTask") {
+                // Readonly Checkbox Logic or ServiceTask
+                if (inp.readonly === true || act.type === "ServiceTask") {
                     input.disabled = true;
                     input.style.backgroundColor = "#f0f0f0";
+                    input.style.color = "#555";
                 }
                 div.appendChild(input);
                 container.appendChild(div);
             });
         }
 
+        // Process Logic
         if (act.type === "ServiceTask") {
-            setTimeout(() => this.executeService(act), 500); 
+            // Async çağırış (Promise gözləmirik ki, UI bloklanmasın)
+            this.executeService(act); 
         } else if (act.type === "SubProcess") {
             setTimeout(() => this.enterSubProcess(act), 1000);
         
         } else if (act.type === "EndEvent") {
             if(btn) btn.style.display = "none";
             
-            // SubProcess bitibsə geri qayıt
+            // SubProcess Return Logic
             if (this.stack.length > 0) {
                 container.innerHTML = `
                     <div class="alert" style="background:#e0f2fe; border-color:#0ea5e9; color:#0369a1; text-align:center">
@@ -133,21 +142,28 @@ class ModularEngine {
             }
 
             const isSuccess = !act.id.toLowerCase().includes("reject");
-
-            // 🛠️ BU HİSSƏ YENİDİR: Mətni Dəyişənlə Əvəz Edən Kod
-            const formatText = (str) => {
-                if (!str) return '';
-                // ${deyisen} formatını axtarır və data içindən tapıb qoyur
-                return str.replace(/\$\{([\w\.]+)\}/g, (_, key) => {
-                    return this.data[key] !== undefined ? this.data[key] : '';
+            
+            // --- PARSER: ${login.message} kimi dəyişənləri tapır ---
+            const formatText = (text) => {
+                if (!text) return '';
+                return text.replace(/\$\$\{?([\w\.]+)\}?/g, (_, path) => {
+                    const keys = path.split('.');
+                    let value = this.data;
+                    for (const key of keys) {
+                        if (value && value[key] !== undefined) {
+                            value = value[key];
+                        } else {
+                            return '';
+                        }
+                    }
+                    return value;
                 });
             };
 
-            // Description-u format edirik (Dırnaqları təmizləyirik)
             let rawDesc = (act.description || '').replace(/^"|"$/g, ''); 
-            const finalMessage = formatText(rawDesc); // <-- Artıq burada real mesaj olur
+            const finalMessage = formatText(rawDesc);
 
-            // Ekrana yazdırırıq
+            // UI Alert
             container.innerHTML = `
                 <div style="
                     padding: 20px; 
@@ -155,12 +171,12 @@ class ModularEngine {
                     border: 2px solid ${isSuccess ? '#22c55e' : '#ef4444'}; 
                     border-radius: 8px; 
                     text-align: center; 
+                    animation: fadeIn 0.5s;
                     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
                 ">
                     <h1 style="margin:0; font-size:40px">${isSuccess ? '🎉' : '⛔'}</h1>
                     <h2 style="margin:10px 0; color:${isSuccess ? '#15803d' : '#b91c1c'}">${act.name}</h2>
-                    
-                    <p style="color:${isSuccess ? '#166534' : '#991b1b'}; font-weight:bold; font-size:18px">
+                    <p style="color:${isSuccess ? '#166534' : '#991b1b'}; font-weight:500; font-size:18px">
                         ${finalMessage}
                     </p>
                 </div>
@@ -171,13 +187,13 @@ class ModularEngine {
                 message: finalMessage,
                 final_data: this.data 
             });
+        }
     }
 
-    // ASYNC SERVICE EXECUTION (Real API və Təhlükəsizlik ilə)
+    // --- ASYNC EXECUTE SERVICE ---
     async executeService(act) {
         const activityKey = `${this.currentProcessName}:${act.id}`;
         
-        // 1. Təkrar icranın qarşısını almaq
         if (this.executionState.get(activityKey) === 'COMPLETED') {
             this.nextStep(true);
             return;
@@ -185,7 +201,6 @@ class ModularEngine {
 
         this.log(this.currentProcessName, `⚙️ Servis İşə Düşdü: ${act.serviceName || 'Simulation'}`);
 
-        // Simulyasiya funksiyasını hazırlayırıq
         const getSimFunction = (raw) => {
             if (!raw) return null;
             try { return new Function('data', raw.includes('=>') ? `return (${raw})(data)` : raw); } 
@@ -193,11 +208,10 @@ class ModularEngine {
         };
         const simFunc = getSimFunction(act.simulation);
 
-        // 2. Vizual gecikmə (Loading effekti üçün)
+        // Vizual gecikmə (Loading)
         await new Promise(r => setTimeout(r, 500));
 
-        // ⚠️ ZOMBIE PROTECTION 1: Gecikmədən sonra yoxlayırıq
-        // Əgər istifadəçi bu 0.5 saniyə ərzində başqa addıma keçibsə, dayandır.
+        // Zombie Protection
         if (this.currentId !== act.id) {
             console.warn("⚠️ Servis ləğv edildi: İstifadəçi başqa addımdadır.");
             return;
@@ -206,20 +220,17 @@ class ModularEngine {
         try {
             let result = {};
             
-            // 3. Daxili Məntiq (Real API burada işləyəcək)
             if (simFunc) {
                 let tempRes = simFunc(this.data);
                 
-                // Əgər nəticə bir Promise-dirsə (məsələn fetch), cavabı gözləyirik
+                // Promise (Fetch) dəstəyi
                 if (tempRes instanceof Promise) {
                     tempRes = await tempRes;
                 }
                 
-                // ⚠️ ZOMBIE PROTECTION 2: API cavabı gələndən sonra yenə yoxlayırıq
-                // API çox uzun çəkibsə və istifadəçi çıxıbsa, nəticəni tətbiq etmə.
+                // Zombie Check 2 (API-dan sonra)
                 if (this.currentId !== act.id) return;
 
-                // İkiqat funksiya xətasına qarşı sığorta ((d)=>(d)=>{})
                 if (typeof tempRes === 'function') {
                     tempRes = tempRes(this.data);
                 }
@@ -227,17 +238,14 @@ class ModularEngine {
                 result = { ...result, ...tempRes };
             }
 
-            // 4. Xarici Mock Cavab (varsa)
             if (act.serviceName && this.services[act.serviceName]) {
                 result = { ...result, ...this.services[act.serviceName].mockResponse };
             }
             
-            // 5. Heç nə yoxdursa Default Uğur
             if (!simFunc && !this.services[act.serviceName]) {
                 result = { status: "SUCCESS" };
             }
 
-            // Nəticəni tətbiq et
             this.data = { ...this.data, ...result };
             this.log(this.currentProcessName, `✅ Servis Bitdi`, result);
             
@@ -246,20 +254,17 @@ class ModularEngine {
 
         } catch (e) {
             console.error(e);
-            // Xətanı yalnız istifadəçi hələ də həmin addımdadırsa göstər
             if (this.currentId === act.id) {
                 alert("Servis Xətası: " + e.message);
             }
         }
     }
 
-    // ✅ DÜZƏLİŞ: SubProcess-ə girəndə datanı yadda saxla
     enterSubProcess(act) {
         this.stack.push({
             processName: this.currentProcessName,
             def: this.def,
             currentId: this.currentId,
-            // Datanın kopyasını yadda saxlayırıq (Backup)
             dataSnapshot: { ...this.data } 
         });
 
@@ -267,28 +272,20 @@ class ModularEngine {
         this.def = this.registry[act.processName];
         this.currentId = this.def.startActivity;
         
-        // Child proses də eyni datanı görür (Inheritance)
         this.render();
     }
 
-    // ✅ DÜZƏLİŞ: SubProcess-dən qayıdanda yeni datanı birləşdir
     returnFromSubProcess() {
-        // 1. Uşaq prosesdəki ən son datanı götür (risk_score buradadır)
         const childData = this.data;
-
-        // 2. Stack-dən ananı çıxar
         const parentState = this.stack.pop();
-
-        // 3. MERGE: Ana prosesin köhnə datası + Uşaq prosesin yeni datası
-        // Bu sətir risk_score-un ana prosesə keçməsini təmin edir
+        
+        // Merge Data
         this.data = { ...parentState.dataSnapshot, ...childData };
 
-        // 4. Context-i bərpa et
         this.currentProcessName = parentState.processName;
         this.def = parentState.def;
         this.currentId = parentState.currentId;
 
-        // 5. Davam et
         this.nextStep(true);
     }
 
@@ -315,7 +312,6 @@ class ModularEngine {
         for (const t of transitions) {
             if (t.condition && t.condition.trim() !== "") {
                 try {
-                    // ✅ ARTIQ risk_score BURADA ƏLÇATAN OLACAQ
                     const keys = Object.keys(this.data);
                     const values = Object.values(this.data);
                     const func = new Function(...keys, `return ${t.condition};`);
