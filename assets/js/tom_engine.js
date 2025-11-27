@@ -1,5 +1,5 @@
 /**
- * FAYL: tom_engine.js (v3.4 - Final Fix: Single Dollar Regex)
+ * FAYL: tom_engine.js (v3.7 - Final Fix: Single Dollar Parsing)
  */
 class ModularEngine {
     constructor(registry, startName) {
@@ -150,10 +150,10 @@ class ModularEngine {
 
             const isSuccess = !act.id.toLowerCase().includes("reject");
             
-            // --- PARSER DÜZƏLİŞİ: TƏK DOLLAR ($) DƏSTƏKLƏNİR ---
+            // --- PARSER DÜZƏLİŞİ: ARTIQ TƏK DOLLAR ($) DƏSTƏKLƏNİR ---
             const formatText = (text) => {
                 if (!text) return '';
-                // Regex: ${login.message} formatını axtarır
+                // Regex: /\$\{([\w\.]+)\}/g  -> ${deyisen}
                 return text.replace(/\$\{([\w\.]+)\}/g, (_, path) => {
                     const keys = path.split('.');
                     let value = this.data;
@@ -161,7 +161,7 @@ class ModularEngine {
                         if (value && value[key] !== undefined) {
                             value = value[key];
                         } else {
-                            return ''; // Tapılmasa boşluq qaytar
+                            return '';
                         }
                     }
                     return value;
@@ -198,7 +198,6 @@ class ModularEngine {
         }
     }
 
-    // --- ASYNC EXECUTE SERVICE ---
     async executeService(act) {
         const activityKey = `${this.currentProcessName}:${act.id}`;
         
