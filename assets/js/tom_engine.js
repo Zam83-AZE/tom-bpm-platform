@@ -1,5 +1,5 @@
 /**
- * FAYL: tom_engine.js (v3.3 - Syntax Fix)
+ * FAYL: tom_engine.js (v3.4 - Fix: Variable Parsing Regex)
  */
 class ModularEngine {
     constructor(registry, startName) {
@@ -108,7 +108,6 @@ class ModularEngine {
                 input.id = inp.name; 
                 input.value = this.data[inp.name] || "";
                 
-                // Readonly Checkbox Logic or ServiceTask
                 if (inp.readonly === true || act.type === "ServiceTask") {
                     input.disabled = true;
                     input.style.backgroundColor = "#f0f0f0";
@@ -128,7 +127,6 @@ class ModularEngine {
         } else if (act.type === "EndEvent") {
             if(btn) btn.style.display = "none";
             
-            // SubProcess Return Logic
             if (this.stack.length > 0) {
                 container.innerHTML = `
                     <div class="alert" style="background:#e0f2fe; border-color:#0ea5e9; color:#0369a1; text-align:center">
@@ -141,17 +139,18 @@ class ModularEngine {
 
             const isSuccess = !act.id.toLowerCase().includes("reject");
             
-            // --- PARSER ---
+            // --- PARSER DÜZƏLİŞİ ---
             const formatText = (text) => {
                 if (!text) return '';
-                return text.replace(/\$\$\{?([\w\.]+)\}?/g, (_, path) => {
+                // ${deyisen} formatını tutur
+                return text.replace(/\$\{([\w\.]+)\}/g, (_, path) => {
                     const keys = path.split('.');
                     let value = this.data;
                     for (const key of keys) {
                         if (value && value[key] !== undefined) {
                             value = value[key];
                         } else {
-                            return '';
+                            return ''; // Tapılmasa boş qaytar
                         }
                     }
                     return value;
@@ -186,9 +185,8 @@ class ModularEngine {
                 final_data: this.data 
             });
         }
-    } // <--- BU MÖTƏRİZƏ SİZDƏ YOX İDİ
+    }
 
-    // --- ASYNC EXECUTE SERVICE ---
     async executeService(act) {
         const activityKey = `${this.currentProcessName}:${act.id}`;
         
@@ -206,10 +204,8 @@ class ModularEngine {
         };
         const simFunc = getSimFunction(act.simulation);
 
-        // Vizual gecikmə (Loading)
         await new Promise(r => setTimeout(r, 500));
 
-        // Zombie Protection
         if (this.currentId !== act.id) {
             console.warn("⚠️ Servis ləğv edildi: İstifadəçi başqa addımdadır.");
             return;
@@ -220,13 +216,10 @@ class ModularEngine {
             
             if (simFunc) {
                 let tempRes = simFunc(this.data);
-                
-                // Promise (Fetch) dəstəyi
                 if (tempRes instanceof Promise) {
                     tempRes = await tempRes;
                 }
                 
-                // Zombie Check 2 (API-dan sonra)
                 if (this.currentId !== act.id) return;
 
                 if (typeof tempRes === 'function') {
@@ -277,7 +270,6 @@ class ModularEngine {
         const childData = this.data;
         const parentState = this.stack.pop();
         
-        // Merge Data
         this.data = { ...parentState.dataSnapshot, ...childData };
 
         this.currentProcessName = parentState.processName;
