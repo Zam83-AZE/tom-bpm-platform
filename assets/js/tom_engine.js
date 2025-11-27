@@ -119,26 +119,35 @@ class ModularEngine {
             setTimeout(() => this.enterSubProcess(act), 1000);
         
         } else if (act.type === "EndEvent") {
+            if(btn) btn.style.display = "none";
             
-            // ✅ ALT PROSES BİTƏNDƏ GERİ QAYITMAQ
+            // SubProcess bitibsə geri qayıt
             if (this.stack.length > 0) {
-                if(btn) btn.style.display = "none";
                 container.innerHTML = `
                     <div class="alert" style="background:#e0f2fe; border-color:#0ea5e9; color:#0369a1; text-align:center">
                         🔄 <b>${act.name}</b> tamamlandı.<br>Ana prosesə qayıdılır...
                     </div>`;
-                
-                // Datanı logda göstər ki, risk_score-un gəldiyini görək
                 this.log(this.currentProcessName, "SubProcess Bitdi. Data:", this.data);
-
                 setTimeout(() => this.returnFromSubProcess(), 1500);
                 return; 
             }
 
-            // ANA PROSES BİTƏNDƏ
-            if(btn) btn.style.display = "none";
             const isSuccess = !act.id.toLowerCase().includes("reject");
-            
+
+            // 🛠️ BU HİSSƏ YENİDİR: Mətni Dəyişənlə Əvəz Edən Kod
+            const formatText = (str) => {
+                if (!str) return '';
+                // ${deyisen} formatını axtarır və data içindən tapıb qoyur
+                return str.replace(/\$\{([\w\.]+)\}/g, (_, key) => {
+                    return this.data[key] !== undefined ? this.data[key] : '';
+                });
+            };
+
+            // Description-u format edirik (Dırnaqları təmizləyirik)
+            let rawDesc = (act.description || '').replace(/^"|"$/g, ''); 
+            const finalMessage = formatText(rawDesc); // <-- Artıq burada real mesaj olur
+
+            // Ekrana yazdırırıq
             container.innerHTML = `
                 <div style="
                     padding: 20px; 
@@ -146,21 +155,22 @@ class ModularEngine {
                     border: 2px solid ${isSuccess ? '#22c55e' : '#ef4444'}; 
                     border-radius: 8px; 
                     text-align: center; 
-                    animation: fadeIn 0.5s;
                     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
                 ">
                     <h1 style="margin:0; font-size:40px">${isSuccess ? '🎉' : '⛔'}</h1>
                     <h2 style="margin:10px 0; color:${isSuccess ? '#15803d' : '#b91c1c'}">${act.name}</h2>
-                    <p style="color:${isSuccess ? '#166534' : '#991b1b'}; font-weight:500">${act.description || ''}</p>
+                    
+                    <p style="color:${isSuccess ? '#166534' : '#991b1b'}; font-weight:bold; font-size:18px">
+                        ${finalMessage}
+                    </p>
                 </div>
             `;
 
             this.log(this.currentProcessName, `🏁 PROSES BİTDİ: ${act.name}`, {
                 status: isSuccess ? "SUCCESS" : "REJECTED",
-                message: act.description,
+                message: finalMessage,
                 final_data: this.data 
             });
-        }
     }
 
     // ASYNC SERVICE EXECUTION (Real API və Təhlükəsizlik ilə)
