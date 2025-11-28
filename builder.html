@@ -67,6 +67,65 @@
         /* Cytoscape Container */
         #cy { width: 100%; height: 100%; background-color: #1e1e1e; }
         hr { border: none; border-top: 2px solid #ecf0f1; margin: 25px 0 }
+
+        /* --- MOBILE RESPONSIVE CSS --- */
+@media (max-width: 768px) {
+    body {
+        flex-direction: column; /* Yan-yana yox, alt-alta */
+        height: auto;
+        overflow: auto;
+    }
+
+    /* 1. Sol Paneli Gizlət/Göstər (Hamburger Məntiqi) */
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: 2px solid #2c3e50;
+        /* Real tətbiqdə bunu JS ilə toggle edəcəyik, hələlik üstdə qalsın */
+    }
+
+    .file-manager {
+        padding: 10px;
+    }
+
+    /* 2. Redaktoru Tam Ekran Et */
+    .editor {
+        width: 100%;
+        padding: 15px;
+        display: block; /* Həmişə görünsün */
+    }
+
+    /* 3. Preview Panelini Aşağı Sal */
+    .preview {
+        width: 100%;
+        height: 500px; /* Sabit hündürlük */
+        border-left: none;
+        border-top: 4px solid #2c3e50;
+    }
+
+    /* 4. Düymələri və Inputları Böyüt (Barmaq üçün) */
+    button, .btn-file, .btn-browse, .btn-save {
+        padding: 15px !important;
+        font-size: 16px !important;
+    }
+
+    input, select, textarea {
+        font-size: 16px !important; /* iOS-da zoom olmaması üçün min 16px olmalıdır */
+        padding: 15px !important;
+    }
+
+    .activity-item {
+        padding: 20px; /* Daha rahat klikləmək üçün */
+    }
+
+    /* 5. Tabları rahatlaşdır */
+    .tab-btn {
+        padding: 15px;
+        font-size: 14px;
+    }
+}
     </style>
 </head>
 
@@ -690,3 +749,4 @@
 </body>
 
 </html>
+
