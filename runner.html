@@ -2,28 +2,38 @@
 <html lang="az">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>TOM Runner v3.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TOM Runner v3.1 (Mobile Fix)</title>
     <style>
+        /* Qlobal Reset */
+        * { box-sizing: border-box; }
+
         body { 
             font-family: 'Segoe UI', sans-serif; 
             display: flex; 
-            padding: 20px; 
-            background: #f0f0f0; 
-            height: 90vh;
+            flex-direction: column;
+            align-items: center; /* Mərkəzləşdirmə */
+            padding: 15px; 
+            background: #f0f2f5; 
+            min-height: 100vh;
             margin: 0;
+            overflow-x: hidden; /* Yanlara sürüşməni bağlayırıq */
         }
         
-        /* UI Kartı */
+        /* UI Kartı - Responsive Dizayn */
         .card { 
             background: white; 
-            padding: 30px; 
-            border-radius: 8px; 
-            width: 400px; 
-            margin-right: 20px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+            padding: 25px; 
+            border-radius: 12px; 
+            
+            /* DÜZƏLİŞ: Sabit en yox, faizlə işləyirik */
+            width: 100%; 
+            max-width: 450px; /* Kompüterdə çox böyük olmasın */
+            
+            margin-bottom: 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
             display: flex; 
             flex-direction: column;
-            overflow-y: auto; /* Daşma olarsa */
         }
         
         /* Log Paneli */
@@ -31,153 +41,119 @@
             background: #1e1e1e; 
             color: #d4d4d4; 
             padding: 20px; 
-            width: 400px; 
-            height: 100%; 
+            width: 100%;
+            max-width: 450px;
+            height: 300px; /* Sabit hündürlük */
             overflow-y: auto; 
             font-family: 'Consolas', monospace; 
-            font-size: 12px; 
+            font-size: 11px; 
             border-radius: 8px;
-            border-left: 4px solid #3b82f6;
+            border-top: 4px solid #3b82f6;
+            display: none; /* Defolt olaraq gizli */
         }
+        
+        /* Log Aktiv olanda */
+        .debug.active { display: block; }
 
-        .log-item { border-bottom: 1px solid #333; padding: 8px 0; margin-bottom: 5px; }
-        .log-time { color: #888; font-size: 10px; display: block; }
+        .log-item { border-bottom: 1px solid #333; padding: 6px 0; margin-bottom: 4px; }
+        .log-time { color: #888; font-size: 9px; display: block; }
         .log-module { color: #f59e0b; font-weight: bold; }
         .log-msg { color: #e2e8f0; margin-left: 5px; }
-        .log-data { 
-            color: #3b82f6; 
-            background: #2d2d2d; 
-            padding: 8px; 
-            margin-top: 5px; 
-            border-radius: 4px; 
-            white-space: pre-wrap; 
-            word-break: break-all;
-        }
+        .log-data { color: #3b82f6; background: #2d2d2d; padding: 5px; margin-top: 5px; border-radius: 4px; white-space: pre-wrap; word-break: break-all; }
         
-        h2 { margin-top: 0; color: #333; }
+        h2 { margin-top: 0; color: #2c3e50; font-size: 20px; text-align: center; }
         
+        /* File Loader */
         .file-loader {
             background: #e3f2fd;
             padding: 15px;
-            border-radius: 6px;
+            border-radius: 8px;
             margin-bottom: 20px;
-            border: 2px dashed #2196f3;
+            border: 2px dashed #90caf9;
+            text-align: center;
         }
         
-        .file-loader h3 { margin: 0 0 10px 0; color: #1976d2; font-size: 14px; }
+        .file-loader h3 { margin: 0 0 10px 0; color: #1565c0; font-size: 14px; }
         
+        /* Böyük Düymələr (Touch üçün) */
+        .btn-browse, button, select, input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px; /* 16px-dən kiçik olsa iPhone zoom edir */
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            outline: none;
+        }
+
         .btn-browse {
             background: #2196f3;
             color: white;
-            padding: 10px 15px;
             border: none;
-            border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
-            width: 100%;
-            margin-bottom: 10px;
             display: inline-block;
-            text-align: center;
             box-sizing: border-box;
         }
         
-        .btn-browse:hover { background: #1976d2; }
+        button#nextBtn {
+            background: #007bff;
+            color: white;
+            border: none;
+            font-weight: bold;
+            margin-top: 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button#nextBtn:active { background: #0056b3; }
         
         .file-list {
             background: white;
-            padding: 8px;
+            padding: 10px;
             border-radius: 4px;
-            max-height: 120px;
+            max-height: 100px;
             overflow-y: auto;
-            font-size: 11px;
+            font-size: 12px;
             color: #666;
+            text-align: left;
+            border: 1px solid #e0e0e0;
         }
-        
-        .file-item { padding: 3px 0; border-bottom: 1px solid #eee; }
-        .file-item:last-child { border-bottom: none; }
         
         .badge-success {
             background: #4caf50;
             color: white;
             padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 9px;
-            margin-left: 5px;
-        }
-        
-        .process-selector { margin-bottom: 15px; }
-        .process-selector label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
-        .process-selector select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
             border-radius: 4px;
-            background: white;
-            font-size: 14px;
+            font-size: 10px;
+            float: right;
         }
         
         .alert {
             background: #fff3cd;
             border: 1px solid #ffc107;
-            padding: 10px;
-            border-radius: 4px;
+            padding: 12px;
+            border-radius: 6px;
             margin-bottom: 15px;
             color: #856404;
-            font-size: 13px;
+            font-size: 14px;
+            line-height: 1.4;
         }
 
-        /* --- MOBILE RESPONSIVE CSS --- */
-        @media (max-width: 768px) {
-            body {
-                flex-direction: column;
-                padding: 10px;
-                height: auto; 
-            }
-
-            .card {
-                width: 100%;
-                margin-right: 0;
-                margin-bottom: 20px;
-                padding: 20px; 
-            }
-
-            /* Log Panelini gizlət */
-            .debug {
-                width: 100%;
-                height: 300px; 
-                margin-top: 10px;
-                display: none; 
-                border-left: none;
-                border-top: 4px solid #3b82f6;
-            }
-            
-            /* Log aktiv olanda */
-            .debug.active { display: block; }
-
-            /* Böyük düymələr */
-            button, select, input, .btn-browse {
-                min-height: 45px; 
-                font-size: 16px; 
-            }
-        }
-
-        /* Toggle Button (Yalnız mobildə) */
+        /* Mobile Log Toggle Button */
         .mobile-log-btn {
-            display: none;
             width: 100%;
+            max-width: 450px;
             padding: 12px;
-            background: #333;
+            background: #34495e;
             color: #fff;
             border: none;
-            border-radius: 6px;
-            margin-top: 10px;
+            border-radius: 8px;
+            margin-top: 0;
+            margin-bottom: 10px;
             cursor: pointer;
             font-weight: bold;
             text-align: center;
-        }
-
-        @media (max-width: 768px) {
-            .mobile-log-btn { display: block; }
         }
     </style>
 </head>
@@ -187,33 +163,33 @@
         <div class="file-loader">
             <h3>📂 JS Fayllarını Yüklə</h3>
             <label class="btn-browse">
-                🔍 Prosesləri Seç (Multiple)
+                🔍 Seç (Multiple)
                 <input type="file" id="jsUploader" accept=".js" multiple style="display: none;" onchange="loadJSFiles(this)">
             </label>
             <div class="file-list" id="fileList">
-                <em style="color: #999;">Heç bir fayl yüklənməyib...</em>
+                <em style="color: #999;">Fayl seçilməyib...</em>
             </div>
         </div>
 
         <div class="process-selector">
-            <label>Proses Seç:</label>
+            <label style="font-weight:bold; display:block; margin-bottom:5px">Proses Seç:</label>
             <select id="processDropdown" onchange="selectProcess(this.value)">
-                <option value="">-- Proses seçin --</option>
+                <option value="">-- Siyahıdan seçin --</option>
             </select>
         </div>
 
         <div id="alertBox"></div>
 
-        <h2 id="stepTitle">Proses seçilməyib</h2>
+        <h2 id="stepTitle">Gözlənilir...</h2>
         <div id="formContainer"></div>
         
-        <button id="nextBtn" onclick="startEngine()" style="margin-top:20px; padding:12px; width:100%; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">
-            Başlat
+        <button id="nextBtn" onclick="startEngine()">
+            Başlat ▶
         </button>
     </div>
 
     <button class="mobile-log-btn" onclick="toggleLog()">
-        🛠️ Sistem Logunu Göstər/Gizlət
+        🛠️ Sistem Logu
     </button>
 
     <div class="debug" id="debugLog">
@@ -221,11 +197,12 @@
     </div>
 
     <script>window.TOM_REGISTRY = {};</script>
-    <script src="tom_engine.js?v=11.0"></script> <script>
+    <script src="tom_engine.js?v=20.0"></script>
+
+    <script>
         let selectedProcessName = null;
         let loadedFiles = [];
 
-        // Mobil Log Toggle
         function toggleLog() {
             const logDiv = document.getElementById('debugLog');
             logDiv.classList.toggle('active');
@@ -234,7 +211,6 @@
             }
         }
 
-        // 1. FILE LOAD
         function loadJSFiles(input) {
             const files = Array.from(input.files);
             if (files.length === 0) return;
@@ -267,11 +243,10 @@
             });
         }
 
-        // 2. UI UPDATES
         function updateFileList() {
             const list = document.getElementById('fileList');
             if (loadedFiles.length === 0) {
-                list.innerHTML = '<em style="color: #999;">Heç bir fayl yüklənməyib...</em>';
+                list.innerHTML = '<em style="color: #999;">Fayl seçilməyib...</em>';
                 return;
             }
             list.innerHTML = loadedFiles.map(name => 
@@ -281,7 +256,7 @@
 
         function updateProcessDropdown() {
             const dropdown = document.getElementById('processDropdown');
-            dropdown.innerHTML = '<option value="">-- Proses seçin --</option>';
+            dropdown.innerHTML = '<option value="">-- Siyahıdan seçin --</option>';
             Object.keys(window.TOM_REGISTRY).forEach(key => {
                 const option = document.createElement('option');
                 option.value = key;
@@ -290,16 +265,19 @@
             });
         }
 
-        // 3. SELECT PROCESS
         function selectProcess(name) {
             selectedProcessName = name;
             const alertBox = document.getElementById('alertBox');
             const stepTitle = document.getElementById('stepTitle');
             const btn = document.getElementById('nextBtn');
             
+            // Sıfırlama
+            btn.innerText = "Başlat ▶";
+            btn.onclick = startEngine; // Reset handler
+            btn.disabled = false;
+
             if (!name) {
-                stepTitle.innerText = "Proses seçilməyib";
-                btn.innerText = "Başlat";
+                stepTitle.innerText = "Gözlənilir...";
                 btn.disabled = true;
                 alertBox.innerHTML = '';
                 return;
@@ -307,12 +285,12 @@
             
             const proc = window.TOM_REGISTRY[name];
             if (!proc) {
-                alertBox.innerHTML = `<div class="alert">⚠️ "${name}" prosesi tapılmadı!</div>`;
+                alertBox.innerHTML = `<div class="alert">⚠️ "${name}" tapılmadı!</div>`;
                 btn.disabled = true;
                 return;
             }
             
-            // Dependency Check
+            // SubProcess Check
             const subProcesses = proc.activities.filter(a => a.type === 'SubProcess');
             const missingDeps = [];
             subProcesses.forEach(sp => {
@@ -324,43 +302,53 @@
             if (missingDeps.length > 0) {
                 alertBox.innerHTML = `
                     <div class="alert">
-                        ⚠️ <b>Lazımlı modullar yoxdur:</b><br>
+                        ⚠️ <b>Çatışmayan modullar:</b><br>
                         ${missingDeps.map(m => `• ${m}`).join('<br>')}
-                        <br><br>Zəhmət olmasa həmin faylları da yükləyin.
                     </div>
                 `;
                 btn.disabled = true;
                 return;
             }
             
-            alertBox.innerHTML = `<div class="alert" style="background:#d4edda; border-color:#c3e6cb; color:#155724;">✅ Proses hazırdır!</div>`;
-            stepTitle.innerText = `${name} - Hazır`;
-            btn.innerText = "Başlat ▶";
-            btn.disabled = false;
+            alertBox.innerHTML = `<div class="alert" style="background:#d4edda; border-color:#c3e6cb; color:#155724;">✅ Hazırdır!</div>`;
+            stepTitle.innerText = `${name}`;
         }
 
-        // 4. START ENGINE
         function startEngine() {
             if (!selectedProcessName) {
-                alert("Əvvəlcə proses seçin!");
+                alert("Zəhmət olmasa proses seçin!");
                 return;
             }
             
+            // Engine mövcudluğunu yoxla
+            if (typeof ModularEngine === 'undefined') {
+                alert("XƏTA: tom_engine.js yüklənməyib! Səhifəni yeniləyin.");
+                return;
+            }
+
             logSystem(`🚀 ${selectedProcessName} başladılır...`);
             
+            // Button funksiyasını dəyişirik
             const btn = document.getElementById('nextBtn');
-            btn.onclick = () => window.engine.nextStep();
             btn.innerText = "Davam Et";
             
-            // Engine instance
-            if (typeof ModularEngine !== 'undefined') {
+            // Ən vacib hissə: Onclick-i dəyişirik
+            btn.onclick = function() {
+                if(window.engine && typeof window.engine.nextStep === 'function') {
+                    window.engine.nextStep();
+                } else {
+                    console.error("Engine instance not found or nextStep is not a function");
+                }
+            };
+            
+            // Engine-i yaradırıq
+            try {
                 window.engine = new ModularEngine(window.TOM_REGISTRY, selectedProcessName);
-            } else {
-                alert("Xəta: Engine faylı yüklənməyib!");
+            } catch (e) {
+                logSystem("Engine Start Error: " + e.message, true);
             }
         }
 
-        // 5. LOGGER
         function logSystem(msg, isError = false) {
             const logContainer = document.getElementById("debugLog");
             const div = document.createElement("div");
@@ -376,8 +364,7 @@
         }
 
         window.onload = function() {
-            logSystem("🎯 TOM Runner v3.0 hazırdır");
-            logSystem("📂 JS fayllarınızı yükləyin və proses seçin");
+            logSystem("🎯 TOM Runner v3.1 Hazırdır");
         };
     </script>
 
