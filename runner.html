@@ -2,7 +2,7 @@
 <html lang="az">
 <head>
     <meta charset="UTF-8">
-    <title>Modular TOM Runner v2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>TOM Runner v3.0</title>
     <style>
         body { 
             font-family: 'Segoe UI', sans-serif; 
@@ -10,6 +10,7 @@
             padding: 20px; 
             background: #f0f0f0; 
             height: 90vh;
+            margin: 0;
         }
         
         /* UI Kartı */
@@ -22,6 +23,7 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
             display: flex; 
             flex-direction: column;
+            overflow-y: auto; /* Daşma olarsa */
         }
         
         /* Log Paneli */
@@ -38,7 +40,6 @@
             border-left: 4px solid #3b82f6;
         }
 
-        /* Log Elementləri */
         .log-item { border-bottom: 1px solid #333; padding: 8px 0; margin-bottom: 5px; }
         .log-time { color: #888; font-size: 10px; display: block; }
         .log-module { color: #f59e0b; font-weight: bold; }
@@ -55,7 +56,6 @@
         
         h2 { margin-top: 0; color: #333; }
         
-        /* ✅ YENİ: File Loader Section */
         .file-loader {
             background: #e3f2fd;
             padding: 15px;
@@ -64,11 +64,7 @@
             border: 2px dashed #2196f3;
         }
         
-        .file-loader h3 {
-            margin: 0 0 10px 0;
-            color: #1976d2;
-            font-size: 14px;
-        }
+        .file-loader h3 { margin: 0 0 10px 0; color: #1976d2; font-size: 14px; }
         
         .btn-browse {
             background: #2196f3;
@@ -80,11 +76,12 @@
             font-weight: bold;
             width: 100%;
             margin-bottom: 10px;
+            display: inline-block;
+            text-align: center;
+            box-sizing: border-box;
         }
         
-        .btn-browse:hover {
-            background: #1976d2;
-        }
+        .btn-browse:hover { background: #1976d2; }
         
         .file-list {
             background: white;
@@ -96,14 +93,8 @@
             color: #666;
         }
         
-        .file-item {
-            padding: 3px 0;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .file-item:last-child {
-            border-bottom: none;
-        }
+        .file-item { padding: 3px 0; border-bottom: 1px solid #eee; }
+        .file-item:last-child { border-bottom: none; }
         
         .badge-success {
             background: #4caf50;
@@ -114,18 +105,8 @@
             margin-left: 5px;
         }
         
-        /* Process Selector */
-        .process-selector {
-            margin-bottom: 15px;
-        }
-        
-        .process-selector label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #555;
-        }
-        
+        .process-selector { margin-bottom: 15px; }
+        .process-selector label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
         .process-selector select {
             width: 100%;
             padding: 10px;
@@ -146,75 +127,63 @@
         }
 
         /* --- MOBILE RESPONSIVE CSS --- */
-@media (max-width: 768px) {
-    /* 1. Alt-alta düzülüş */
-    body {
-        flex-direction: column;
-        padding: 10px;
-        height: auto; /* Hündürlük avtomatik olsun */
-    }
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                padding: 10px;
+                height: auto; 
+            }
 
-    /* 2. Kartı tam ekran et */
-    .card {
-        width: 100%;
-        margin-right: 0;
-        margin-bottom: 20px;
-        padding: 20px; /* Bir az yığcamlıq */
-    }
+            .card {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 20px;
+                padding: 20px; 
+            }
 
-    /* 3. Log Panelini Aşağı Sal və Gizlət (JS ilə açacağıq) */
-    .debug {
-        width: 100%;
-        height: 300px; /* Sabit hündürlük */
-        margin-top: 10px;
-        display: none; /* Defolt olaraq gizli */
-        border-left: none;
-        border-top: 4px solid #3b82f6;
-    }
-    
-    /* Log aktiv olanda görünüşü */
-    .debug.active {
-        display: block;
-    }
+            /* Log Panelini gizlət */
+            .debug {
+                width: 100%;
+                height: 300px; 
+                margin-top: 10px;
+                display: none; 
+                border-left: none;
+                border-top: 4px solid #3b82f6;
+            }
+            
+            /* Log aktiv olanda */
+            .debug.active { display: block; }
 
-    /* 4. Düymələr və Inputlar */
-    button, select, input, .btn-browse {
-        height: 50px; /* Barmaq üçün rahat hündürlük */
-        font-size: 16px;
-    }
-    
-    /* 5. Alert Mesajları */
-    .alert {
-        font-size: 14px;
-    }
-}
+            /* Böyük düymələr */
+            button, select, input, .btn-browse {
+                min-height: 45px; 
+                font-size: 16px; 
+            }
+        }
 
-/* Log Toggle Düyməsi (Yalnız mobildə görünəcək) */
-.mobile-log-btn {
-    display: none;
-    width: 100%;
-    padding: 12px;
-    background: #333;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    margin-top: 10px;
-    cursor: pointer;
-    font-weight: bold;
-    text-align: left;
-}
+        /* Toggle Button (Yalnız mobildə) */
+        .mobile-log-btn {
+            display: none;
+            width: 100%;
+            padding: 12px;
+            background: #333;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            text-align: center;
+        }
 
-@media (max-width: 768px) {
-    .mobile-log-btn {
-        display: block; /* Mobildə göstər */
-    }
-}
+        @media (max-width: 768px) {
+            .mobile-log-btn { display: block; }
+        }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <!-- ✅ YENİ: File Loader Section -->
         <div class="file-loader">
             <h3>📂 JS Fayllarını Yüklə</h3>
             <label class="btn-browse">
@@ -226,7 +195,6 @@
             </div>
         </div>
 
-        <!-- Process Selector -->
         <div class="process-selector">
             <label>Proses Seç:</label>
             <select id="processDropdown" onchange="selectProcess(this.value)">
@@ -238,81 +206,74 @@
 
         <h2 id="stepTitle">Proses seçilməyib</h2>
         <div id="formContainer"></div>
+        
         <button id="nextBtn" onclick="startEngine()" style="margin-top:20px; padding:12px; width:100%; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">
             Başlat
         </button>
     </div>
 
+    <button class="mobile-log-btn" onclick="toggleLog()">
+        🛠️ Sistem Logunu Göstər/Gizlət
+    </button>
+
     <div class="debug" id="debugLog">
         <div style="border-bottom:1px solid #555; padding-bottom:10px; font-weight:bold; color:#fff;">⚡ SYSTEM LOG</div>
     </div>
 
-    <!-- ✅ YALNIZ ENGINE LAZY LOAD OLUNUR -->
     <script>window.TOM_REGISTRY = {};</script>
-    <script src="assets/js/tom_engine.js"></script>
-
-    <script>
+    <script src="tom_engine.js?v=11.0"></script> <script>
         let selectedProcessName = null;
         let loadedFiles = [];
 
-        // ====================================
-        // 1. MULTIPLE JS FAYLLARINI YÜKLƏMƏK
-        // ====================================
+        // Mobil Log Toggle
+        function toggleLog() {
+            const logDiv = document.getElementById('debugLog');
+            logDiv.classList.toggle('active');
+            if(logDiv.classList.contains('active')) {
+                logDiv.scrollTop = 0;
+            }
+        }
+
+        // 1. FILE LOAD
         function loadJSFiles(input) {
             const files = Array.from(input.files);
-            
             if (files.length === 0) return;
 
             logSystem(`${files.length} fayl yüklənir...`);
-
             let processed = 0;
             
             files.forEach(file => {
                 const reader = new FileReader();
-                
                 reader.onload = function(e) {
                     try {
-                        // JS kodunu icra edirik (TOM_REGISTRY-ə əlavə olunur)
                         eval(e.target.result);
-                        
-                        // Fayl adını qeyd edirik
                         loadedFiles.push(file.name);
-                        
                         logSystem(`✅ ${file.name} yükləndi`);
-                        
                         processed++;
                         
-                        // Hamısı bitdikdən sonra UI-ni update et
                         if (processed === files.length) {
                             updateFileList();
                             updateProcessDropdown();
                             logSystem(`🎉 ${files.length} proses hazırdır!`);
                         }
-                        
                     } catch (err) {
                         logSystem(`❌ ${file.name} xətalıdır: ${err.message}`, true);
                     }
                 };
-                
                 reader.onerror = function() {
                     logSystem(`❌ ${file.name} oxuna bilmədi`, true);
                 };
-                
                 reader.readAsText(file);
             });
         }
 
-        // ====================================
-        // 2. UI UPDATE FUNKSIYALARI
-        // ====================================
+        // 2. UI UPDATES
         function updateFileList() {
             const list = document.getElementById('fileList');
-            
             if (loadedFiles.length === 0) {
                 list.innerHTML = '<em style="color: #999;">Heç bir fayl yüklənməyib...</em>';
                 return;
             }
-            
             list.innerHTML = loadedFiles.map(name => 
                 `<div class="file-item">📄 ${name} <span class="badge-success">OK</span></div>`
             ).join('');
@@ -321,8 +282,6 @@
         function updateProcessDropdown() {
             const dropdown = document.getElementById('processDropdown');
             dropdown.innerHTML = '<option value="">-- Proses seçin --</option>';
-            
-            // TOM_REGISTRY-dəki bütün prosesləri əlavə edirik
             Object.keys(window.TOM_REGISTRY).forEach(key => {
                 const option = document.createElement('option');
                 option.value = key;
@@ -331,12 +290,9 @@
             });
         }
 
-        // ====================================
-        // 3. PROSES SEÇİMİ
-        // ====================================
+        // 3. SELECT PROCESS
         function selectProcess(name) {
             selectedProcessName = name;
-            
             const alertBox = document.getElementById('alertBox');
             const stepTitle = document.getElementById('stepTitle');
             const btn = document.getElementById('nextBtn');
@@ -349,19 +305,16 @@
                 return;
             }
             
-            // Prosesi yoxlayırıq
             const proc = window.TOM_REGISTRY[name];
-            
             if (!proc) {
                 alertBox.innerHTML = `<div class="alert">⚠️ "${name}" prosesi tapılmadı!</div>`;
                 btn.disabled = true;
                 return;
             }
             
-            // Sub-Process dependency check
+            // Dependency Check
             const subProcesses = proc.activities.filter(a => a.type === 'SubProcess');
             const missingDeps = [];
-            
             subProcesses.forEach(sp => {
                 if (!window.TOM_REGISTRY[sp.processName]) {
                     missingDeps.push(sp.processName);
@@ -380,16 +333,13 @@
                 return;
             }
             
-            // Hər şey OK
             alertBox.innerHTML = `<div class="alert" style="background:#d4edda; border-color:#c3e6cb; color:#155724;">✅ Proses hazırdır!</div>`;
             stepTitle.innerText = `${name} - Hazır`;
             btn.innerText = "Başlat ▶";
             btn.disabled = false;
         }
 
-        // ====================================
-        // 4. ENGINE BAŞLATMAQ
-        // ====================================
+        // 4. START ENGINE
         function startEngine() {
             if (!selectedProcessName) {
                 alert("Əvvəlcə proses seçin!");
@@ -398,23 +348,23 @@
             
             logSystem(`🚀 ${selectedProcessName} başladılır...`);
             
-            // Button-u dəyişdiririk
             const btn = document.getElementById('nextBtn');
             btn.onclick = () => window.engine.nextStep();
             btn.innerText = "Davam Et";
             
-            // Engine-i işə salırıq
-            window.engine = new ModularEngine(window.TOM_REGISTRY, selectedProcessName);
+            // Engine instance
+            if (typeof ModularEngine !== 'undefined') {
+                window.engine = new ModularEngine(window.TOM_REGISTRY, selectedProcessName);
+            } else {
+                alert("Xəta: Engine faylı yüklənməyib!");
+            }
         }
 
-        // ====================================
-        // 5. LOG HELPER
-        // ====================================
+        // 5. LOGGER
         function logSystem(msg, isError = false) {
             const logContainer = document.getElementById("debugLog");
             const div = document.createElement("div");
             div.className = "log-item";
-            
             const color = isError ? '#ef4444' : '#10b981';
             
             div.innerHTML = `
@@ -422,20 +372,14 @@
                 <span class="log-module" style="color:${color}">[SYSTEM]</span> 
                 <span class="log-msg">${msg}</span>
             `;
-            
             logContainer.prepend(div);
         }
 
-        // ====================================
-        // 6. BAŞLANĞIC LOG
-        // ====================================
         window.onload = function() {
-            logSystem("🎯 TOM Runner v2 hazırdır");
+            logSystem("🎯 TOM Runner v3.0 hazırdır");
             logSystem("📂 JS fayllarınızı yükləyin və proses seçin");
         };
     </script>
 
 </body>
-
 </html>
-
