@@ -144,6 +144,71 @@
             color: #856404;
             font-size: 13px;
         }
+
+        /* --- MOBILE RESPONSIVE CSS --- */
+@media (max-width: 768px) {
+    /* 1. Alt-alta düzülüş */
+    body {
+        flex-direction: column;
+        padding: 10px;
+        height: auto; /* Hündürlük avtomatik olsun */
+    }
+
+    /* 2. Kartı tam ekran et */
+    .card {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 20px;
+        padding: 20px; /* Bir az yığcamlıq */
+    }
+
+    /* 3. Log Panelini Aşağı Sal və Gizlət (JS ilə açacağıq) */
+    .debug {
+        width: 100%;
+        height: 300px; /* Sabit hündürlük */
+        margin-top: 10px;
+        display: none; /* Defolt olaraq gizli */
+        border-left: none;
+        border-top: 4px solid #3b82f6;
+    }
+    
+    /* Log aktiv olanda görünüşü */
+    .debug.active {
+        display: block;
+    }
+
+    /* 4. Düymələr və Inputlar */
+    button, select, input, .btn-browse {
+        height: 50px; /* Barmaq üçün rahat hündürlük */
+        font-size: 16px;
+    }
+    
+    /* 5. Alert Mesajları */
+    .alert {
+        font-size: 14px;
+    }
+}
+
+/* Log Toggle Düyməsi (Yalnız mobildə görünəcək) */
+.mobile-log-btn {
+    display: none;
+    width: 100%;
+    padding: 12px;
+    background: #333;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    margin-top: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    text-align: left;
+}
+
+@media (max-width: 768px) {
+    .mobile-log-btn {
+        display: block; /* Mobildə göstər */
+    }
+}
     </style>
 </head>
 <body>
@@ -373,3 +438,4 @@
 </body>
 
 </html>
+
