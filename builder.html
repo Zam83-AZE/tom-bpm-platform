@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TOM Builder v7.0 (Resizable)</title>
+    <title>TOM Builder v7.1 (Stable)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js"></script>
@@ -16,7 +16,7 @@
             height: 100vh; 
             display: flex; 
             overflow: hidden; 
-            background: #2d2d2d; /* Dark background for gaps */
+            background: #2d2d2d; 
         }
 
         /* --- RESIZABLE PANELS --- */
@@ -46,7 +46,7 @@
         }
 
         .editor-panel {
-            flex: 1; /* Height */
+            flex: 1; 
             padding: 20px;
             overflow-y: auto;
             background: #fff;
@@ -70,7 +70,7 @@
             flex-direction: column;
         }
 
-        /* --- CODE MAXIMIZER --- */
+        /* CODE MAXIMIZER */
         .code-wrapper { position: relative; }
         .btn-maximize {
             position: absolute;
@@ -87,7 +87,6 @@
         }
         .btn-maximize:hover { opacity: 1; }
 
-        /* Fullscreen Code Mode */
         .code-wrapper.fullscreen {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -99,7 +98,7 @@
             height: calc(100vh - 50px) !important;
         }
 
-        /* --- STANDARD STYLES --- */
+        /* STANDARD STYLES */
         .file-manager { padding: 20px; background: #34495e; border-bottom: 2px solid #2c3e50; }
         .file-manager h3 { margin: 0 0 12px; font-size: 12px; color: #bdc3c7; text-transform: uppercase; }
         .btn-group { display: flex; gap: 8px; margin-bottom: 12px; }
@@ -116,8 +115,6 @@
         .activity-item:hover { background: #34495e; color: #fff; }
         .activity-item.active { background: #3498db; color: #fff; font-weight: bold; }
         
-        .badge { font-size: 9px; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.2); margin-left: 5px; }
-        
         /* Editor Form */
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 12px; color: #34495e; }
@@ -129,7 +126,7 @@
         .btn-small { padding: 4px 8px; font-size: 10px; cursor: pointer; background: #95a5a6; color: #fff; border: none; border-radius: 3px; }
         .btn-small.delete { background: #e74c3c; }
 
-        /* Preview Tabs */
+        /* Tabs */
         .tab-container { display: flex; background: #252526; border-bottom: 1px solid #3e3e42; }
         .tab-btn { flex: 1; padding: 8px; background: transparent; color: #888; border: none; cursor: pointer; font-size: 11px; font-weight: bold; }
         .tab-btn.active { color: #fff; background: #1e1e1e; border-bottom: 2px solid #3498db; }
@@ -138,6 +135,7 @@
         .tab-content.active { display: block; position: relative; height: 100%; }
         #jsonPreview { padding: 10px; margin: 0; height: 100%; overflow: auto; font-size: 11px; }
         #cy { width: 100%; height: 100%; background: #1e1e1e; }
+        hr { border: none; border-top: 2px solid #ecf0f1; margin: 25px 0 }
     </style>
 </head>
 <body>
@@ -230,31 +228,21 @@
         const editorPanel = document.querySelector('.editor-panel');
         const previewPanel = document.querySelector('.preview-panel');
 
-        // Horizontal Resize (Sidebar)
-        resizerH.addEventListener('mousedown', (e) => {
-            document.addEventListener('mousemove', resizeH);
-            document.addEventListener('mouseup', stopResizeH);
-        });
+        resizerH.addEventListener('mousedown', (e) => { document.addEventListener('mousemove', resizeH); document.addEventListener('mouseup', stopResizeH); });
         function resizeH(e) { sidebar.style.width = e.clientX + 'px'; }
         function stopResizeH() { document.removeEventListener('mousemove', resizeH); }
 
-        // Vertical Resize (Editor vs Preview)
-        resizerV.addEventListener('mousedown', (e) => {
-            document.addEventListener('mousemove', resizeV);
-            document.addEventListener('mouseup', stopResizeV);
-        });
+        resizerV.addEventListener('mousedown', (e) => { document.addEventListener('mousemove', resizeV); document.addEventListener('mouseup', stopResizeV); });
         function resizeV(e) {
-            const newHeight = e.clientY - 40; // Top offset adjustment
+            const newHeight = e.clientY - 40; 
             editorPanel.style.height = newHeight + 'px';
             previewPanel.style.height = `calc(100vh - ${newHeight}px)`;
         }
         function stopResizeV() { 
             document.removeEventListener('mousemove', resizeV); 
-            // Diaqramın ölçüsü dəyişdiyi üçün onu yeniləyirik
             if(cy) cy.resize();
         }
 
-        // --- CODE MAXIMIZER ---
         function toggleCodeFullscreen() {
             const wrapper = document.getElementById('codeWrapper');
             wrapper.classList.toggle('fullscreen');
@@ -262,13 +250,280 @@
             btn.innerText = wrapper.classList.contains('fullscreen') ? "✖ Bağla" : "⛶ Genişləndir";
         }
 
-        // --- TOM LOGIC (Standard) ---
+        // --- TOM LOGIC ---
         window.TOM_REGISTRY = {};
         let currentProcessName = null;
         let selectedActivityIndex = null;
         let cy = null;
 
-        // (Aşağıdakı funksiyalar v6.0 ilə eynidir - qısa saxladım)
+        // 1. CORE FUNCTIONS (FIXED)
+        function createNewFile() { 
+            const n = prompt("Proses adı:"); 
+            if(n){ 
+                TOM_REGISTRY[n] = { processName: n, startActivity: "", activities: [], transitions: [] }; 
+                refreshProcessList();
+                document.getElementById('processSelector').value = n;
+                switchProcess(n); 
+            } 
+        }
+
+        function refreshProcessList() { 
+            const s = document.getElementById('processSelector'); 
+            s.innerHTML = '<option value="">-- Fayl seçin --</option>'; 
+            Object.keys(TOM_REGISTRY).forEach(k => { 
+                const o = document.createElement('option'); 
+                o.value = o.text = k; 
+                s.add(o); 
+            });
+        }
+
+        function switchProcess(n) { 
+            currentProcessName = n; 
+            document.getElementById('editorPanel').style.display = 'none'; 
+            selectedActivityIndex = null; 
+            
+            if(!n) {
+                document.getElementById('activityList').innerHTML = "";
+                document.getElementById('jsonPreview').innerText = "Fayl seçin...";
+                return;
+            }
+            renderActivityList(); 
+            updateJSONPreview(); 
+            
+            // Vizual tab açıqdırsa yenilə
+            if(document.getElementById('tab-visual').classList.contains('active')) {
+                renderVisualGraph();
+            }
+        }
+
+        function handleFileUpload(input) { 
+            Array.from(input.files).forEach(f => { 
+                const r = new FileReader(); 
+                r.onload = e => { 
+                    try {
+                        eval(e.target.result); 
+                        refreshProcessList();
+                        // İlk faylı avtomatik seç
+                        const match = e.target.result.match(/TOM_REGISTRY\[["'](.*?)["']\]/);
+                        if(match && match[1]) {
+                            document.getElementById('processSelector').value = match[1];
+                            switchProcess(match[1]);
+                        }
+                    } catch(err) { alert("Xəta: " + err.message); }
+                }; 
+                r.readAsText(f); 
+            }); 
+            input.value = '';
+        }
+
+        function downloadCurrentFile() {
+            if(!currentProcessName) return alert("Proses seçin!");
+            const d = TOM_REGISTRY[currentProcessName];
+            let j = JSON.stringify(d, (k, v) => typeof v === 'function' ? v.toString() : v, 4);
+            j = j.replace(/"simulation":\s*"(.*?)"/gs, (m, f) => `simulation: ${f.replace(/\\n/g, '\n').replace(/\\"/g, '"')}`);
+            const b = new Blob([`window.TOM_REGISTRY["${currentProcessName}"]=${j};`], {type: "text/javascript"});
+            const a = document.createElement('a'); 
+            a.href = URL.createObjectURL(b); 
+            a.download = `tom_${currentProcessName}.js`; 
+            a.click();
+        }
+
+        // 2. ACTIVITY LOGIC (FIXED)
+        function renderActivityList() {
+            const l = document.getElementById('activityList'); 
+            l.innerHTML = ""; 
+            const p = TOM_REGISTRY[currentProcessName];
+            if(!p) return;
+
+            p.activities.forEach((a, i) => {
+                const li = document.createElement('li'); 
+                li.className = `activity-item ${i === selectedActivityIndex ? 'active' : ''}`;
+                li.innerHTML = `<span>${a.name}</span> <button class='btn-icon' onclick="deleteActivity(event,${i})">×</button>`;
+                li.onclick = () => loadActivity(i); 
+                l.appendChild(li);
+            });
+        }
+
+        function loadActivity(i) {
+            selectedActivityIndex = i; 
+            const p = TOM_REGISTRY[currentProcessName];
+            if(!p || !p.activities[i]) return;
+            
+            const a = p.activities[i];
+            document.getElementById('editorPanel').style.display = 'block';
+            renderActivityList();
+            
+            // Formu doldur
+            ['id','name','role','description','type','serviceName','processName'].forEach(f => {
+                const el = document.getElementById('act_' + f); 
+                if(el) el.value = a[f] || "";
+            });
+            
+            if(document.getElementById('act_simulation')) {
+                let simVal = "";
+                if (typeof a.simulation === 'function') simVal = a.simulation.toString();
+                else if (a.simulation) simVal = a.simulation;
+                document.getElementById('act_simulation').value = simVal;
+            }
+            
+            // Toggle Sections
+            document.getElementById('serviceConfig').style.display = a.type === 'ServiceTask' ? 'block' : 'none';
+            document.getElementById('subProcessConfig').style.display = a.type === 'SubProcess' ? 'block' : 'none';
+            
+            renderInputs(a); 
+            renderTransitions(a);
+        }
+        
+        function updateActivity(f, v) { 
+            if(selectedActivityIndex === null) return;
+            const a = TOM_REGISTRY[currentProcessName].activities[selectedActivityIndex]; 
+            a[f] = v; 
+            
+            // StartActivity Sync
+            if(f === 'id' && TOM_REGISTRY[currentProcessName].startActivity === '') {
+                TOM_REGISTRY[currentProcessName].startActivity = v;
+            }
+
+            if(f === 'type') loadActivity(selectedActivityIndex); 
+            
+            updateJSONPreview(); 
+            renderActivityList(); 
+        }
+        
+        function updateSimulation(v) { 
+            if(selectedActivityIndex === null) return;
+            const a = TOM_REGISTRY[currentProcessName].activities[selectedActivityIndex]; 
+            a.simulation = v; 
+            updateJSONPreview(); 
+        }
+        
+        function addActivity() { 
+            if(!currentProcessName) return alert("Proses seçin!");
+            const p = TOM_REGISTRY[currentProcessName]; 
+            const newId = "Step_" + (p.activities.length + 1);
+            p.activities.push({ id: newId, name: "Yeni Addım", type: "UserTask", inputs: [] }); 
+            
+            if(!p.startActivity) p.startActivity = newId;
+
+            renderActivityList();
+            loadActivity(p.activities.length - 1); 
+            updateJSONPreview();
+        }
+        
+        function deleteActivity(e, i) { 
+            e.stopPropagation(); 
+            if(!confirm("Silinsin?")) return;
+            TOM_REGISTRY[currentProcessName].activities.splice(i, 1); 
+            selectedActivityIndex = null;
+            document.getElementById('editorPanel').style.display = 'none';
+            renderActivityList(); 
+            updateJSONPreview();
+        }
+
+        function renderInputs(a) {
+            const l = document.getElementById('inputsList'); 
+            l.innerHTML = ""; 
+            (a.inputs || []).forEach((inp, i) => {
+                const safeName = (inp.name || '').replace(/"/g, '&quot;');
+                const safeLabel = (inp.label || '').replace(/"/g, '&quot;');
+                const safeOpts = (inp.options || '').replace(/"/g, '&quot;');
+                
+                let html = `<div class='sub-item' style='flex-wrap:wrap'>
+                    <input value="${safeName}" placeholder="Key" style="flex:1" oninput="updInp(${i},'name',this.value)">
+                    <input value="${safeLabel}" placeholder="Label" style="flex:1" oninput="updInp(${i},'label',this.value)">
+                    <select style="width:80px" onchange="updInp(${i},'type',this.value)">
+                        <option value="text" ${inp.type==='text'?'selected':''}>Text</option>
+                        <option value="number" ${inp.type==='number'?'selected':''}>Num</option>
+                        <option value="select" ${inp.type==='select'?'selected':''}>Sel</option>
+                    </select>
+                    <button class='btn-small delete' onclick="delInp(${i})">×</button>`;
+                
+                if(inp.type === 'select') {
+                    html += `<div style="width:100%; margin-top:5px"><input value="${safeOpts}" placeholder="Opsiyalar (vergüllə)" style="width:100%;border-color:#3498db" oninput="updInp(${i},'options',this.value)"></div>`;
+                }
+                html += `</div>`;
+                l.innerHTML += html;
+            });
+        }
+        
+        function renderTransitions(a) {
+            const l = document.getElementById('transitionsList'); 
+            l.innerHTML = ""; 
+            const p = TOM_REGISTRY[currentProcessName];
+            
+            (p.transitions || []).forEach((t, i) => {
+                if(t.from !== a.id) return; // Yalnız bu addımdan çıxanları göstər
+                
+                // Global indexi tapmaq üçün:
+                const globalIndex = p.transitions.indexOf(t);
+                
+                l.innerHTML += `<div class='sub-item'>
+                    <strong>TO:</strong><input value="${t.to}" style="flex:1" oninput="updTrans(${globalIndex},'to',this.value)">
+                    <strong>IF:</strong><input value="${t.condition || ''}" style="flex:1" oninput="updTrans(${globalIndex},'condition',this.value)">
+                    <button class='btn-small delete' onclick="delTrans(${globalIndex})">×</button>
+                </div>`;
+            });
+        }
+
+        window.addInput = () => { 
+            const a = getCurrentAct(); 
+            if(!a) return;
+            if(!a.inputs) a.inputs = []; 
+            a.inputs.push({ name: "", type: "text" }); 
+            loadActivity(selectedActivityIndex); 
+            updateJSONPreview();
+        }
+        
+        window.updInp = (i, f, v) => { 
+            const a = getCurrentAct(); 
+            a.inputs[i][f] = v; 
+            if(f === 'type') loadActivity(selectedActivityIndex); // Re-render for select options
+            updateJSONPreview(); 
+        }
+        
+        window.delInp = (i) => { 
+            const a = getCurrentAct(); 
+            a.inputs.splice(i, 1); 
+            loadActivity(selectedActivityIndex); 
+            updateJSONPreview(); 
+        }
+        
+        window.addTransition = () => { 
+            const a = getCurrentAct(); 
+            if(!a) return;
+            const p = TOM_REGISTRY[currentProcessName]; 
+            if(!p.transitions) p.transitions = []; 
+            p.transitions.push({ from: a.id, to: "", condition: "" }); 
+            loadActivity(selectedActivityIndex); 
+            updateJSONPreview(); 
+        }
+        
+        window.updTrans = (i, f, v) => { 
+            const p = TOM_REGISTRY[currentProcessName]; 
+            p.transitions[i][f] = v; 
+            updateJSONPreview(); 
+        }
+        
+        window.delTrans = (i) => { 
+            const p = TOM_REGISTRY[currentProcessName]; 
+            p.transitions.splice(i, 1); 
+            loadActivity(selectedActivityIndex); 
+            updateJSONPreview(); 
+        }
+
+        function getCurrentAct() { 
+            if(!currentProcessName || selectedActivityIndex === null) return null;
+            return TOM_REGISTRY[currentProcessName].activities[selectedActivityIndex]; 
+        }
+
+        function updateJSONPreview() {
+            if(currentProcessName) {
+                document.getElementById('jsonPreview').innerText = JSON.stringify(TOM_REGISTRY[currentProcessName], null, 2);
+                if(document.getElementById('tab-visual').classList.contains('active')) renderVisualGraph();
+            }
+        }
+
+        // --- VISUALIZATION ---
         function switchTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -330,90 +585,6 @@
                 ],
                 layout: { name: 'dagre', rankDir: 'TB', padding: 30 }
             });
-        }
-
-        // --- Core Functions (Standard) ---
-        function createNewFile() { const n = prompt("Proses adı:"); if(n){ TOM_REGISTRY[n]={processName:n,startActivity:"",activities:[],transitions:[]}; switchProcess(n); refreshProcessList(); } }
-        function refreshProcessList() { 
-            const s=document.getElementById('processSelector'); s.innerHTML='<option>-- Seç --</option>'; 
-            Object.keys(TOM_REGISTRY).forEach(k=>{ const o=document.createElement('option'); o.value=o.text=k; s.add(o) });
-        }
-        function switchProcess(n) { currentProcessName=n; document.getElementById('editorPanel').style.display='none'; selectedActivityIndex=null; renderActivityList(); updateJSONPreview(); }
-        function handleFileUpload(input) { 
-            Array.from(input.files).forEach(f=>{ const r=new FileReader(); r.onload=e=>{ eval(e.target.result); refreshProcessList(); }; r.readAsText(f); }); 
-        }
-        function downloadCurrentFile() {
-            const d=TOM_REGISTRY[currentProcessName];
-            let j=JSON.stringify(d,(k,v)=>typeof v==='function'?v.toString():v,4);
-            j=j.replace(/"simulation":\s*"(.*?)"/gs,(m,f)=>`simulation: ${f.replace(/\\n/g,'\n').replace(/\\"/g,'"')}`);
-            const b=new Blob([`window.TOM_REGISTRY["${currentProcessName}"]=${j}`],{type:"text/javascript"});
-            const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=`tom_${currentProcessName}.js`; a.click();
-        }
-
-        // --- Activity Logic ---
-        function renderActivityList() {
-            const l=document.getElementById('activityList'); l.innerHTML=""; const p=TOM_REGISTRY[currentProcessName];
-            if(!p) return;
-            p.activities.forEach((a,i)=>{
-                const li=document.createElement('li'); li.className=`activity-item ${i===selectedActivityIndex?'active':''}`;
-                li.innerHTML=`<span>${a.name}</span> <button class='btn-icon' onclick="deleteActivity(event,${i})">×</button>`;
-                li.onclick=()=>loadActivity(i); l.appendChild(li);
-            });
-        }
-        function loadActivity(i) {
-            selectedActivityIndex=i; const a=TOM_REGISTRY[currentProcessName].activities[i];
-            document.getElementById('editorPanel').style.display='block';
-            renderActivityList();
-            // Populate Form
-            ['id','name','role','description','type','serviceName','processName'].forEach(f=> {
-                const el=document.getElementById('act_'+f); if(el) el.value=a[f]||"";
-            });
-            if(a.simulation) document.getElementById('act_simulation').value = typeof a.simulation==='function'?a.simulation.toString():a.simulation;
-            
-            // Toggle Sections
-            document.getElementById('serviceConfig').style.display=a.type==='ServiceTask'?'block':'none';
-            document.getElementById('subProcessConfig').style.display=a.type==='SubProcess'?'block':'none';
-            
-            renderInputs(a); renderTransitions(a);
-        }
-        
-        function updateActivity(f,v) { const a=TOM_REGISTRY[currentProcessName].activities[selectedActivityIndex]; a[f]=v; if(f==='type') loadActivity(selectedActivityIndex); updateJSONPreview(); renderActivityList(); }
-        function updateSimulation(v) { const a=TOM_REGISTRY[currentProcessName].activities[selectedActivityIndex]; a.simulation=v; updateJSONPreview(); }
-        
-        function addActivity() { 
-            const p=TOM_REGISTRY[currentProcessName]; 
-            p.activities.push({id:"Step_"+(p.activities.length+1),name:"Yeni",type:"UserTask",inputs:[]}); 
-            loadActivity(p.activities.length-1); 
-        }
-        function deleteActivity(e,i) { e.stopPropagation(); TOM_REGISTRY[currentProcessName].activities.splice(i,1); renderActivityList(); }
-
-        function renderInputs(a) {
-            const l=document.getElementById('inputsList'); l.innerHTML=""; 
-            (a.inputs||[]).forEach((inp,i)=>{
-                l.innerHTML+=`<div class='sub-item'><input value="${inp.name}" oninput="updInp(${i},'name',this.value)"><input value="${inp.label}" oninput="updInp(${i},'label',this.value)"><button class='btn-small delete' onclick="delInp(${i})">×</button></div>`;
-            });
-        }
-        function renderTransitions(a) {
-            const l=document.getElementById('transitionsList'); l.innerHTML=""; const p=TOM_REGISTRY[currentProcessName];
-            (p.transitions||[]).filter(t=>t.from===a.id).forEach(t=>{
-                const i=p.transitions.indexOf(t);
-                l.innerHTML+=`<div class='sub-item'>TO:<input value="${t.to}" oninput="updTrans(${i},'to',this.value)">IF:<input value="${t.condition||''}" oninput="updTrans(${i},'condition',this.value)"><button class='btn-small delete' onclick="delTrans(${i})">×</button></div>`;
-            });
-        }
-
-        window.addInput=()=>{ const a=TOM_REGISTRY[currentProcessName].activities[selectedActivityIndex]; if(!a.inputs)a.inputs=[]; a.inputs.push({name:"",type:"text"}); loadActivity(selectedActivityIndex); }
-        window.updInp=(i,f,v)=>{ const a=TOM_REGISTRY[currentProcessName].activities[selectedActivityIndex]; a.inputs[i][f]=v; updateJSONPreview(); }
-        window.delInp=(i)=>{ const a=TOM_REGISTRY[currentProcessName].activities[selectedActivityIndex]; a.inputs.splice(i,1); loadActivity(selectedActivityIndex); }
-        
-        window.addTransition=()=>{ const a=TOM_REGISTRY[currentProcessName].activities[selectedActivityIndex]; const p=TOM_REGISTRY[currentProcessName]; if(!p.transitions)p.transitions=[]; p.transitions.push({from:a.id,to:""}); loadActivity(selectedActivityIndex); }
-        window.updTrans=(i,f,v)=>{ const p=TOM_REGISTRY[currentProcessName]; p.transitions[i][f]=v; updateJSONPreview(); }
-        window.delTrans=(i)=>{ const p=TOM_REGISTRY[currentProcessName]; p.transitions.splice(i,1); loadActivity(selectedActivityIndex); }
-
-        function updateJSONPreview() {
-            if(currentProcessName) {
-                document.getElementById('jsonPreview').innerText = JSON.stringify(TOM_REGISTRY[currentProcessName], null, 2);
-                if(document.getElementById('tab-visual').classList.contains('active')) renderVisualGraph();
-            }
         }
     </script>
 </body>
