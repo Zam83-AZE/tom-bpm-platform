@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TOM Builder v8.0 (Pro Editor)</title>
+    <title>TOM Builder v8.1 (Pro Editor + Format)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js"></script>
@@ -14,6 +14,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.7/beautify.min.js"></script>
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -40,38 +42,58 @@
         .resizer-v { height: 5px; background: #bdc3c7; cursor: row-resize; }
         .preview-panel { height: 300px; min-height: 100px; background: #1e1e1e; color: #4ec9b0; display: flex; flex-direction: column; }
 
-        /* CODE EDITOR STYLES */
-        .CodeMirror {
-            height: 200px;
+        /* CODE EDITOR STYLES (Updated) */
+        .code-wrapper { 
+            position: relative; 
+            margin-top: 5px; 
+            border: 1px solid #2c3e50;
             border-radius: 4px;
-            font-family: 'Consolas', monospace;
-            font-size: 13px;
+            overflow: hidden;
         }
-        .code-wrapper { position: relative; margin-top: 5px; }
-        .btn-maximize {
-            position: absolute;
-            top: -25px;
-            right: 0;
-            background: #333;
+        
+        /* Editor Toolbar */
+        .editor-tools {
+            background: #2c3e50;
+            padding: 5px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 5px;
+        }
+
+        .btn-tool {
+            background: #4a5a6a;
             color: #fff;
             border: none;
-            padding: 4px 8px;
+            padding: 4px 10px;
             font-size: 11px;
             cursor: pointer;
             border-radius: 3px;
-            z-index: 10;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .btn-tool:hover { background: #3498db; }
+
+        .CodeMirror {
+            height: 200px;
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
         }
 
         /* Fullscreen Mode */
         .code-wrapper.fullscreen {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background: #282a36; /* Dracula bg */
+            background: #282a36;
             z-index: 2000;
-            padding: 40px 20px 20px 20px;
+            border: none;
+            border-radius: 0;
+            display: flex;
+            flex-direction: column;
         }
-        .code-wrapper.fullscreen .CodeMirror { height: 100% !important; }
-        .code-wrapper.fullscreen .btn-maximize { top: 10px; right: 20px; font-size: 14px; padding: 8px 16px; background: #ff5555; }
+        .code-wrapper.fullscreen .editor-tools { padding: 10px; background: #1e1e1e; }
+        .code-wrapper.fullscreen .CodeMirror { flex: 1; height: auto !important; }
+        .code-wrapper.fullscreen .btn-tool { font-size: 13px; padding: 8px 15px; }
+        .code-wrapper.fullscreen .btn-maximize { background: #e74c3c; }
 
         /* STANDARD UI */
         .form-group { margin-bottom: 15px; }
@@ -82,7 +104,7 @@
         .btn-file, .btn-browse, .btn-save { padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; border: none; color: white; font-size: 12px; }
         .btn-file { background: #e67e22; } .btn-browse { background: #3498db; } .btn-save { background: #27ae60; }
         
-        .activity-list { flex: 1; overflow-y: auto; list-style: none;background: #fff; }
+        .activity-list { flex: 1; overflow-y: auto; list-style: none; background: #fff; }
         .activity-item { padding: 10px 15px; border-bottom: 1px solid #ecf0f1; cursor: pointer; color: #2c3e50; display:flex; justify-content:space-between; font-size:13px;}
         .activity-item:hover { background: #34495e; color: #fff; }
         .activity-item.active { background: #3498db; color: #fff; font-weight: bold; }
@@ -146,8 +168,12 @@
             <div id="serviceConfig" class="config-section service" style="display:none">
                 <div class="form-group"><label>Service Name</label><input type="text" id="act_serviceName" oninput="updateActivity('serviceName',this.value)"></div>
                 
-                <div class="form-group code-wrapper" id="codeWrapper">
-                    <button class="btn-maximize" onclick="toggleCodeFullscreen()">⛶ Genişləndir</button>
+                <label>Simulation (JS Code)</label>
+                <div class="code-wrapper" id="codeWrapper">
+                    <div class="editor-tools">
+                        <button class="btn-tool" onclick="formatCode()">🧹 Format</button>
+                        <button class="btn-tool btn-maximize" onclick="toggleCodeFullscreen()">⛶ Genişləndir</button>
+                    </div>
                     <textarea id="act_simulation"></textarea>
                 </div>
             </div>
@@ -178,7 +204,6 @@
         // --- CODEMIRROR INIT ---
         let cmEditor;
         window.onload = function() {
-            // CodeMirror-u textarea-ya bağlayırıq
             cmEditor = CodeMirror.fromTextArea(document.getElementById("act_simulation"), {
                 mode: "javascript",
                 theme: "dracula",
@@ -187,7 +212,6 @@
                 lineWrapping: true
             });
 
-            // Kod dəyişəndə yaddaşa yazırıq
             cmEditor.on("change", (cm) => {
                 if(selectedActivityIndex !== null && TOM_REGISTRY[currentProcessName]) {
                     const a = TOM_REGISTRY[currentProcessName].activities[selectedActivityIndex];
@@ -196,15 +220,24 @@
                 }
             });
 
-            console.log("%c🚀 TOM Builder v8.0", "color:#27ae60;font-size:16px;font-weight:bold");
+            console.log("%c🚀 TOM Builder v8.1", "color:#27ae60;font-size:16px;font-weight:bold");
         };
+
+        // ✅ NEW: FORMATTER FUNCTION
+        function formatCode() {
+            if(!cmEditor) return;
+            const raw = cmEditor.getValue();
+            // js_beautify kitabxanasını istifadə edirik
+            const formatted = js_beautify(raw, { indent_size: 2, space_in_empty_paren: true });
+            cmEditor.setValue(formatted);
+        }
 
         function toggleCodeFullscreen() {
             const wrapper = document.getElementById('codeWrapper');
             wrapper.classList.toggle('fullscreen');
             const btn = wrapper.querySelector('.btn-maximize');
             btn.innerText = wrapper.classList.contains('fullscreen') ? "✖ Bağla" : "⛶ Genişləndir";
-            cmEditor.refresh(); // Layout pozulmasın deyə
+            cmEditor.refresh();
         }
 
         // --- RESIZABLE LOGIC ---
@@ -267,13 +300,12 @@
                 const el=document.getElementById('act_'+f); if(el) el.value=a[f]||"";
             });
 
-            // CODEMIRROR UPDATE
             if(cmEditor) {
                 let simVal = "";
                 if (typeof a.simulation === 'function') simVal = a.simulation.toString();
                 else if (a.simulation) simVal = a.simulation;
                 cmEditor.setValue(simVal || "");
-                setTimeout(() => cmEditor.refresh(), 10); // Layout fix
+                setTimeout(() => cmEditor.refresh(), 10); 
             }
 
             document.getElementById('serviceConfig').style.display=a.type==='ServiceTask'?'block':'none';
@@ -289,7 +321,6 @@
             if(f==='type') loadActivity(selectedActivityIndex);
             updateJSONPreview(); renderActivityList(); 
         }
-        // updateSimulation artıq CodeMirror eventindən çağırılır
 
         function addActivity() { 
             if(!currentProcessName) return alert("Seçin!");
@@ -371,4 +402,3 @@
     </script>
 </body>
 </html>
-
