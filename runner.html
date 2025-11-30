@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TOM Runner v3.2 (Responsive)</title>
+    <title>TOM Runner v4.0</title>
     <style>
-        /* --- QLOBAL (DESKTOP DEFAULT) --- */
+        /* --- QLOBAL STİLLƏR --- */
         * { box-sizing: border-box; }
 
         body { 
             font-family: 'Segoe UI', sans-serif; 
             display: flex; 
-            flex-direction: row; /* Desktopda YAN-YANA */
-            justify-content: center; /* Ortala */
+            flex-direction: row; /* Desktopda yan-yana */
+            justify-content: center; 
             align-items: flex-start;
             padding: 20px; 
             background: #f0f2f5; 
@@ -20,40 +20,38 @@
             margin: 0;
         }
         
-        /* UI Kartı (Desktop) */
+        /* UI Kartı */
         .card { 
             background: white; 
             padding: 30px; 
             border-radius: 12px; 
-            width: 400px; /* Sabit en */
+            width: 400px; /* Desktopda sabit en */
             margin-right: 20px; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
             display: flex; 
             flex-direction: column;
-            flex-shrink: 0; /* Sıxılmasın */
+            flex-shrink: 0; 
         }
         
-        /* Log Paneli (Desktop) */
+        /* Log Paneli */
         .debug { 
             background: #1e1e1e; 
             color: #d4d4d4; 
             padding: 20px; 
             width: 400px; 
-            height: 80vh; /* Ekran boyu */
+            height: 80vh; 
             overflow-y: auto; 
             font-family: 'Consolas', monospace; 
             font-size: 12px; 
             border-radius: 12px;
             border-left: 4px solid #3b82f6;
-            display: block; /* Desktopda HƏMİŞƏ GÖRÜNÜR */
+            display: block; /* Desktopda həmişə açıq */
         }
 
-        /* Mobil Log Düyməsi (Desktopda GİZLİDİR) */
-        .mobile-log-btn {
-            display: none; 
-        }
+        /* Mobil Log Düyməsi (Desktopda gizli) */
+        .mobile-log-btn { display: none; }
 
-        /* --- STİLLƏR --- */
+        /* Log Elementləri */
         .log-item { border-bottom: 1px solid #333; padding: 6px 0; margin-bottom: 4px; }
         .log-time { color: #888; font-size: 10px; display: block; }
         .log-module { color: #f59e0b; font-weight: bold; }
@@ -62,6 +60,7 @@
         
         h2 { margin-top: 0; color: #2c3e50; font-size: 20px; text-align: center; }
         
+        /* File Loader */
         .file-loader {
             background: #e3f2fd;
             padding: 15px;
@@ -137,7 +136,7 @@
             line-height: 1.4;
         }
 
-        /* --- MOBILE MEDIA QUERY (768px-dən kiçik ekranlar üçün) --- */
+        /* --- MOBILE CSS (Telefonda işə düşür) --- */
         @media (max-width: 768px) {
             body {
                 flex-direction: column; /* Alt-alta */
@@ -146,25 +145,26 @@
             }
 
             .card {
-                width: 100%; /* Tam ekran */
+                width: 100%;
                 max-width: none;
                 margin-right: 0;
                 margin-bottom: 15px;
             }
 
-            /* Log panelini gizlət və aşağı sal */
+            /* Log Paneli */
             .debug {
                 width: 100%;
                 height: 300px;
                 display: none; /* Mobildə gizli */
                 border-left: none;
                 border-top: 4px solid #3b82f6;
+                margin-top: 10px;
             }
             
-            /* Log aktiv olanda */
+            /* Log açılanda */
             .debug.active { display: block; }
 
-            /* Mobildə Log Düyməsini Göstər */
+            /* Log Düyməsi */
             .mobile-log-btn {
                 display: block;
                 width: 100%;
@@ -180,7 +180,7 @@
                 font-size: 16px;
             }
 
-            /* Düymələri barmaq üçün böyüt */
+            /* Düymələri Böyüt */
             button, select, input, .btn-browse {
                 padding: 15px;
                 font-size: 16px;
@@ -227,13 +227,15 @@
         <div style="border-bottom:1px solid #555; padding-bottom:10px; font-weight:bold; color:#fff;">⚡ SYSTEM LOG</div>
     </div>
 
-   <script>window.TOM_REGISTRY = {};</script>
- <script src="assets/js/tom_engine.js?v=42.0"></script>
+    <script>window.TOM_REGISTRY = {};</script>
+    
+    <script src="assets/js/tom_engine.js?v=50.0"></script>
 
     <script>
         let selectedProcessName = null;
         let loadedFiles = [];
 
+        // Log Toggle (Mobil)
         function toggleLog() {
             const logDiv = document.getElementById('debugLog');
             logDiv.classList.toggle('active');
@@ -242,6 +244,7 @@
             }
         }
 
+        // 1. LOAD FILES
         function loadJSFiles(input) {
             const files = Array.from(input.files);
             if (files.length === 0) return;
@@ -296,12 +299,16 @@
             });
         }
 
+        // 2. SELECT PROCESS (UI Reset Logic Added)
         function selectProcess(name) {
             selectedProcessName = name;
             const alertBox = document.getElementById('alertBox');
             const stepTitle = document.getElementById('stepTitle');
+            const formContainer = document.getElementById('formContainer');
             const btn = document.getElementById('nextBtn');
             
+            // UI Təmizləmə
+            formContainer.innerHTML = "";
             btn.innerText = "Başlat ▶";
             btn.onclick = startEngine; 
             btn.disabled = false;
@@ -320,6 +327,7 @@
                 return;
             }
             
+            // SubProcess Dependency Check
             const subProcesses = proc.activities.filter(a => a.type === 'SubProcess');
             const missingDeps = [];
             subProcesses.forEach(sp => {
@@ -343,6 +351,7 @@
             stepTitle.innerText = `${name}`;
         }
 
+        // 3. START ENGINE
         function startEngine() {
             if (!selectedProcessName) {
                 alert("Zəhmət olmasa proses seçin!");
@@ -356,19 +365,25 @@
 
             logSystem(`🚀 ${selectedProcessName} başladılır...`);
             
+            // Təmizlik (Safety)
+            document.getElementById('formContainer').innerHTML = "";
+
             const btn = document.getElementById('nextBtn');
             btn.innerText = "Davam Et";
             
-            btn.onclick = function() {
-                if(window.engine && typeof window.engine.nextStep === 'function') {
-                    window.engine.nextStep();
-                } else {
-                    console.error("Engine xətası: nextStep tapılmadı");
-                }
-            };
-            
+            // Engine-i yaradırıq
             try {
+                window.engine = null; // Köhnəni sil
                 window.engine = new ModularEngine(window.TOM_REGISTRY, selectedProcessName);
+
+                // Onclick-i yalnız uğurlu startdan sonra dəyişirik
+                btn.onclick = function() {
+                    if(window.engine && typeof window.engine.nextStep === 'function') {
+                        window.engine.nextStep();
+                    } else {
+                        console.error("Engine xətası: nextStep tapılmadı");
+                    }
+                };
             } catch (e) {
                 logSystem("Engine Start Error: " + e.message, true);
             }
@@ -389,11 +404,8 @@
         }
 
         window.onload = function() {
-            logSystem("🎯 TOM Runner v3.2 Hazırdır");
+            logSystem("🎯 TOM Runner v4.0 Hazırdır");
         };
     </script>
-
 </body>
 </html>
-
-
