@@ -298,8 +298,7 @@
                 dropdown.add(option);
             });
         }
-
-        // 2. SELECT PROCESS (UI Reset Logic Added)
+        
         function selectProcess(name) {
             selectedProcessName = name;
             const alertBox = document.getElementById('alertBox');
@@ -309,9 +308,13 @@
             
             // UI Təmizləmə
             formContainer.innerHTML = "";
+            
+            // --- DÜZƏLİŞ ---
             btn.innerText = "Başlat ▶";
             btn.onclick = startEngine; 
             btn.disabled = false;
+            btn.style.display = "block"; // <--- BU SƏTRİ ƏLAVƏ ETDİK (DÜYMƏNİ AÇIRIQ)
+            // ----------------
 
             if (!name) {
                 stepTitle.innerText = "Gözlənilir...";
@@ -322,7 +325,7 @@
             
             const proc = window.TOM_REGISTRY[name];
             if (!proc) {
-                alertBox.innerHTML = `<div class="alert">⚠️ "${name}" tapılmadı!</div>`;
+                alertBox.innerHTML = `<div class="alert">⚠️ "${name}" prosesi tapılmadı!</div>`;
                 btn.disabled = true;
                 return;
             }
@@ -409,3 +412,4 @@
     </script>
 </body>
 </html>
+
