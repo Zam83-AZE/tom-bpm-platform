@@ -364,13 +364,36 @@ window.TOM_REGISTRY["${currentProcessName}"] = ${jsonString};`;
             renderInputs(a); renderTransitions(a);
         }
 
-        function updateActivity(f,v) { 
-            if(selectedActivityIndex===null) return; 
-            const a=TOM_REGISTRY[currentProcessName].activities[selectedActivityIndex]; 
-            a[f]=v; 
-            if(f==='id' && TOM_REGISTRY[currentProcessName].startActivity==='') TOM_REGISTRY[currentProcessName].startActivity=v;
-            if(f==='type') loadActivity(selectedActivityIndex);
-            updateJSONPreview(); renderActivityList(); 
+        // function updateActivity(f,v) { 
+        //     if(selectedActivityIndex===null) return; 
+        //     const a=TOM_REGISTRY[currentProcessName].activities[selectedActivityIndex]; 
+        //     a[f]=v; 
+        //     if(f==='id' && TOM_REGISTRY[currentProcessName].startActivity==='') TOM_REGISTRY[currentProcessName].startActivity=v;
+        //     if(f==='type') loadActivity(selectedActivityIndex);
+        //     updateJSONPreview(); renderActivityList(); 
+        // }
+
+        function updateActivity(f, v) { 
+            // 1. Aktiv addımı tapırıq
+            if (selectedActivityIndex === null) return; 
+            const p = TOM_REGISTRY[currentProcessName];
+            const a = p.activities[selectedActivityIndex]; 
+
+            // 2. Əgər ID dəyişirsə, Start Activity-ni də yoxlayıb yeniləyirik
+            if (f === 'id') {
+                // "Əgər start boşdursa VƏ YA dəyişən addım elə startın özüdürsə -> Yenilə"
+                if (!p.startActivity || p.startActivity === a.id) {
+                    p.startActivity = v;
+                }
+            }
+
+            // 3. Dəyəri mənimsədirik
+            a[f] = v; 
+            
+            // 4. Digər yeniləmələr
+            if (f === 'type') loadActivity(selectedActivityIndex);
+            updateJSONPreview(); 
+            renderActivityList(); 
         }
 
         function addActivity() { 
@@ -453,4 +476,5 @@ window.TOM_REGISTRY["${currentProcessName}"] = ${jsonString};`;
     </script>
 </body>
 </html>
+
 
